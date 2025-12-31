@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Voice Assistant</title>
+  </head>
+  <body>
+    <button id="start-btn">Record & Command</button>
+    <p>Starting: <span id="output">...</span></p>
+    <p>Run section status: <span id="startAppsSection">...</span></p>
+    <p>Kill section status: <span id="KillAppsSection">...</span></p>
+    <p>YouTube section status: <span id="searchOnYtSection">...</span></p>
+    <p>AI answer section status: <span id="AiResponsSection">...</span></p>
+
+    <script>
+      const recognition = new (window.SpeechRecognition ||
+        window.webkitSpeechRecognition)();
+
+      recognition.lang = "ar-SA";
+      // recognition.continuous = true;
+      recognition.interimResults = false;
+
+      let isSystemActive = false;
+
+      document.getElementById("start-btn").onclick = () => {
+        if (!isSystemActive) {
+          recognition.start();
+          isSystemActive = true;
+          console.log("System Activated. Listening...");
+          document.getElementById("start-btn").innerText = "System Online 🟢";
+        }
+      };
+
+      async function sendRequest(url, cmd) {
+        const res = await fetch(url, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(cmd),
+        });
+
+        const data = res.text();
+        return data;
+      }
+
+      recognition.onresult = async (event) => {
+        const transcript =
+          event.results[event.results.length - 1][0].transcript.trim();
+        // console.log("Command detected: ", transcript);
+
+        const splitedCall = transcript.split(" ");
+
+        if (splitedCall[0] === "شغل") {
+          splitedCall.shift(0);
+          const cmd = splitedCall.join(" ");
+
+          if (cmd.length < 1) {
+            console.log("there is no command");
+            return;
+          }
+          try {
+            const respons = await sendRequest("http://localhost:3000/runApp", {
+              appName: cmd,
+            });
+            document.getElementById("startAppsSection").innerHTML = respons;
+          } catch (err) {
+            console.log(err);
+          }
+
+          document.getElementById("output").innerHTML = cmd;
+        } else if (splitedCall[0] === "طفي") {
+          splitedCall.shift(0);
+          const cmd = splitedCall.join(" ");
+
+          if (cmd.length < 1) {
+            console.log("there is no command");
+            return;
+          }
+          try {
+            const respons = await sendRequest("http://localhost:3000/killApp", {
+              appName: cmd,
+            });
+            document.getElementById("KillAppsSection").innerHTML = respons;
+          } catch (err) {
+            console.log(err);
+          }
+
+          document.getElementById("output").innerHTML = cmd;
+        } else if (splitedCall[0] === "ابحث" && splitedCall[1] === "عن") {
+          splitedCall.shift(0);
+          splitedCall.shift(1);
+          const cmd = splitedCall.join(" ");
+          console.log(cmd);
+          if (cmd.length < 1) {
+            console.log("there is no command");
+            return;
+          }
+          try {
+            const respons = await sendRequest(
+              "http://localhost:3000/searchOnYt",
+              {
+                search: cmd,
+              }
+            );
+            document.getElementById("searchOnYtSection").innerHTML = respons;
+          } catch (err) {
+            console.log(err);
+          }
+
+          document.getElementById("output").innerHTML = cmd;
+        } else if (splitedCall[0] === "اسمع") {
+          splitedCall.shift(0);
+
+          const cmd = splitedCall.join(" ");
+          console.log(cmd);
+          if (cmd.length < 1) {
+            console.log("there is no command");
+            return;
+          }
+          document.getElementById("output").innerHTML = cmd;
+          try {
+            const respons = await sendRequest("http://localhost:3000/askAi", {
+              questionToAi: cmd,
+            });
+            document.getElementById("AiResponsSection").innerHTML = respons;
+          } catch (err) {
+            console.log(err);
+          }
+
+          
+        }
+      };
+      recognition.onend = () => {
+        if (isSystemActive) {
+          setTimeout(() => {
+            try {
+              recognition.start();
+            } catch (e) {
+              console.log(e);
+            }
+          }, 10);
+        }
+      };
+
+      recognition.onerror = (event) => {
+        if (event.error === "no-speech") return;
+        console.error("Speech Error: ", event.error);
+      };
+
+      // const utterance = new SpeechSynthesisUtterance(data);
+      // utterance.lang = "en-US";
+      // window.speechSynthesis.speak(utterance);
+    </script>
+  </body>
+</html>
