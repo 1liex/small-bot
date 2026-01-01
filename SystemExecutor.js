@@ -8,24 +8,29 @@ export class SystemExecutor {
     this.connectURL = connectURL;
 
     this.dataSchema = new mongoose.Schema({
-      name: String,
+      botName: String,
       runcommands: [
         {
-          userCmd: String,
+          userCmd: {
+            type: String,
+            unique: true,
+            trim: true,
+          },
           cmd: String,
           msg: String,
         },
       ],
+
       killcommands: [
         {
-          userCmd: String,
+          userCmd: { type: String, unique: true, trim: true },
           cmd: String,
           msg: String,
         },
       ],
     });
 
-    this.modelTest = mongoose.model("comms", this.dataSchema, "comms");
+    this.botModel = mongoose.model("comms", this.dataSchema, "comms");
 
     this.mongoDBConnect();
   }
@@ -33,7 +38,7 @@ export class SystemExecutor {
   async mongoDBConnect() {
     try {
       await mongoose.connect(this.connectURL).then(() => {
-        exec("start chrome http://localhost:3000/Bot")
+        exec("start chrome http://localhost:3000/Bot");
       });
     } catch (err) {
       console.log(err);
@@ -56,10 +61,31 @@ export class SystemExecutor {
       });
     });
   }
+  async getAllDataFromDB() {
+    const result = await this.botModel.find({});
+    return result;
+  }
 
+  async ChangeBotName(oldName, newName) {
+    try {
+      const result = await this.botModel.updateOne(
+        { botName: oldName },
+        { $set: { botName: newName } }
+      );
+      console.log(result)
+      if (result.modifiedCount > 0){
+
+        return {msg:`Changed name to ${newName}`, status: "success"};
+      }else{
+        return {msg: "You have chooce new name"}
+      }
+    } catch (err) {
+      console.error(err);
+    }
+  }
   async findCommandAndStartApps(command) {
     try {
-      const result = await this.modelTest.findOne(
+      const result = await this.botModel.findOne(
         { "runcommands.userCmd": command },
         { "runcommands.$": 1 }
       );
@@ -81,7 +107,7 @@ export class SystemExecutor {
 
   async findCommandAndKilltApps(command) {
     try {
-      const result = await this.modelTest.findOne(
+      const result = await this.botModel.findOne(
         { "killcommands.userCmd": command },
         { "killcommands.$": 1 }
       );
@@ -106,7 +132,7 @@ export class SystemExecutor {
 
     const executeCommandRespons = await this.executeCommand(ytCommand);
     if (executeCommandRespons.status === "success") {
-      return "openning...";
+      return `Search about ${search}`;
     }
   }
 

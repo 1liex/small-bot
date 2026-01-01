@@ -47,4 +47,18 @@ app.get("/Bot", (req, res) => {
   res.render("speeshToText");
 });
 
+app.get("/getRunKillCmdAndBotName", async (req, res) => {
+  const allDbData = await execute.getAllDataFromDB();
+
+  res.send(allDbData[0]);
+});
+
+app.post("/ChangeBotName", async (req, res) => {
+  const newBotName = req.body.newBotName;
+  const oldBotName = req.body.oldBotName;
+
+  const executeRespons = await execute.ChangeBotName(oldBotName, newBotName);
+  res.send(executeRespons);
+});
+
 app.listen("3000");

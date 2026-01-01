@@ -6,150 +6,205 @@
     <title>Voice Assistant</title>
   </head>
   <body>
+    <h2 id="showBotName">...</h2>
     <button id="start-btn">Record & Command</button>
-    <p>Starting: <span id="output">...</span></p>
-    <p>Run section status: <span id="startAppsSection">...</span></p>
-    <p>Kill section status: <span id="KillAppsSection">...</span></p>
-    <p>YouTube section status: <span id="searchOnYtSection">...</span></p>
-    <p>AI answer section status: <span id="AiResponsSection">...</span></p>
+    <p>You side: <span id="output">...</span></p>
+    <p>Run status: <span id="startAppsSection">...</span></p>
+    <p>Kill status: <span id="KillAppsSection">...</span></p>
+    <p>YouTube status: <span id="searchOnYtSection">...</span></p>
+    <p>AI answer status: <span id="AiResponsSection">...</span></p>
+
+    <div>
+      <form id="botNameForm">
+        <input type="text" placeholder="Change bot name" id="nameBot" />
+        <button type="submit">Change</button>
+      </form>
+    </div>
 
     <script>
-      const recognition = new (window.SpeechRecognition ||
-        window.webkitSpeechRecognition)();
+      (async () => {
+        const res = await fetch(
+          "http://localhost:3000/getRunKillCmdAndBotName",
+          {
+            method: "GET",
+            headers: { "Content-Type": "application/json" },
+          }
+        );
 
-      recognition.lang = "ar-SA";
-      // recognition.continuous = true;
-      recognition.interimResults = false;
+        const data = await res.json();
 
-      let isSystemActive = false;
+        const botName = data.botName;
+        document.getElementById("showBotName").textContent = botName;
+        const recognition = new (window.SpeechRecognition ||
+          window.webkitSpeechRecognition)();
 
-      document.getElementById("start-btn").onclick = () => {
-        if (!isSystemActive) {
-          recognition.start();
-          isSystemActive = true;
-          console.log("System Activated. Listening...");
-          document.getElementById("start-btn").innerText = "System Online 🟢";
+        recognition.lang = "ar-SA";
+        // recognition.continuous = true;
+        recognition.interimResults = false;
+
+        let isSystemActive = false;
+
+        document.getElementById("start-btn").onclick = () => {
+          if (!isSystemActive) {
+            recognition.start();
+            isSystemActive = true;
+            console.log("System Activated. Listening...");
+            document.getElementById("start-btn").innerText = "System Online 🟢";
+          }
+        };
+
+        async function sendRequest(url, cmd) {
+          const res = await fetch(url, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(cmd),
+          });
+
+          const data = res.text();
+          return data;
         }
-      };
 
-      async function sendRequest(url, cmd) {
-        const res = await fetch(url, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(cmd),
-        });
+        recognition.onresult = async (event) => {
+          const transcript =
+            event.results[event.results.length - 1][0].transcript.trim();
+          // console.log("Command detected: ", transcript);
 
-        const data = res.text();
-        return data;
-      }
+          const splitedCall = transcript.split(" ");
 
-      recognition.onresult = async (event) => {
-        const transcript =
-          event.results[event.results.length - 1][0].transcript.trim();
-        // console.log("Command detected: ", transcript);
+          if (splitedCall[0] === botName && splitedCall[1] === "شغل") {
+            splitedCall.shift(0);
+            splitedCall.shift(1);
+            const cmd = splitedCall.join(" ");
 
-        const splitedCall = transcript.split(" ");
-
-        if (splitedCall[0] === "شغل") {
-          splitedCall.shift(0);
-          const cmd = splitedCall.join(" ");
-
-          if (cmd.length < 1) {
-            console.log("there is no command");
-            return;
-          }
-          try {
-            const respons = await sendRequest("http://localhost:3000/runApp", {
-              appName: cmd,
-            });
-            document.getElementById("startAppsSection").innerHTML = respons;
-          } catch (err) {
-            console.log(err);
-          }
-
-          document.getElementById("output").innerHTML = cmd;
-        } else if (splitedCall[0] === "طفي") {
-          splitedCall.shift(0);
-          const cmd = splitedCall.join(" ");
-
-          if (cmd.length < 1) {
-            console.log("there is no command");
-            return;
-          }
-          try {
-            const respons = await sendRequest("http://localhost:3000/killApp", {
-              appName: cmd,
-            });
-            document.getElementById("KillAppsSection").innerHTML = respons;
-          } catch (err) {
-            console.log(err);
-          }
-
-          document.getElementById("output").innerHTML = cmd;
-        } else if (splitedCall[0] === "ابحث" && splitedCall[1] === "عن") {
-          splitedCall.shift(0);
-          splitedCall.shift(1);
-          const cmd = splitedCall.join(" ");
-          console.log(cmd);
-          if (cmd.length < 1) {
-            console.log("there is no command");
-            return;
-          }
-          try {
-            const respons = await sendRequest(
-              "http://localhost:3000/searchOnYt",
-              {
-                search: cmd,
-              }
-            );
-            document.getElementById("searchOnYtSection").innerHTML = respons;
-          } catch (err) {
-            console.log(err);
-          }
-
-          document.getElementById("output").innerHTML = cmd;
-        } else if (splitedCall[0] === "اسمع") {
-          splitedCall.shift(0);
-
-          const cmd = splitedCall.join(" ");
-          console.log(cmd);
-          if (cmd.length < 1) {
-            console.log("there is no command");
-            return;
-          }
-          document.getElementById("output").innerHTML = cmd;
-          try {
-            const respons = await sendRequest("http://localhost:3000/askAi", {
-              questionToAi: cmd,
-            });
-            document.getElementById("AiResponsSection").innerHTML = respons;
-          } catch (err) {
-            console.log(err);
-          }
-
-          
-        }
-      };
-      recognition.onend = () => {
-        if (isSystemActive) {
-          setTimeout(() => {
-            try {
-              recognition.start();
-            } catch (e) {
-              console.log(e);
+            if (cmd.length < 1) {
+              console.log("there is no command");
+              return;
             }
-          }, 10);
-        }
-      };
+            try {
+              const respons = await sendRequest(
+                "http://localhost:3000/runApp",
+                {
+                  appName: cmd,
+                }
+              );
+              document.getElementById("startAppsSection").innerHTML = respons;
+            } catch (err) {
+              console.log(err);
+            }
 
-      recognition.onerror = (event) => {
-        if (event.error === "no-speech") return;
-        console.error("Speech Error: ", event.error);
-      };
+            document.getElementById("output").innerHTML = transcript;
+          } else if (splitedCall[0] === botName && splitedCall[1] === "طفي") {
+            splitedCall.shift(0);
+            splitedCall.shift(1);
+            const cmd = splitedCall.join(" ");
 
-      // const utterance = new SpeechSynthesisUtterance(data);
-      // utterance.lang = "en-US";
-      // window.speechSynthesis.speak(utterance);
+            if (cmd.length < 1) {
+              console.log("there is no command");
+              return;
+            }
+            try {
+              const respons = await sendRequest(
+                "http://localhost:3000/killApp",
+                {
+                  appName: cmd,
+                }
+              );
+              document.getElementById("KillAppsSection").innerHTML = respons;
+            } catch (err) {
+              console.log(err);
+            }
+
+            document.getElementById("output").innerHTML = transcript;
+          } else if (
+            splitedCall[0] === botName &&
+            splitedCall[1] === "ابحث" &&
+            splitedCall[2] === "عن"
+          ) {
+            splitedCall.shift(0);
+            splitedCall.shift(1);
+            splitedCall.shift(2);
+            const cmd = splitedCall.join(" ");
+            if (cmd.length < 1) {
+              console.log("there is no command");
+              return;
+            }
+            try {
+              const respons = await sendRequest(
+                "http://localhost:3000/searchOnYt",
+                {
+                  search: cmd,
+                }
+              );
+              document.getElementById("searchOnYtSection").innerHTML = respons;
+            } catch (err) {
+              console.log(err);
+            }
+
+            document.getElementById("output").innerHTML = transcript;
+          } else if (splitedCall[0] === "اسمع") {
+            splitedCall.shift(0);
+
+            const cmd = splitedCall.join(" ");
+            console.log(cmd);
+            if (cmd.length < 1) {
+              console.log("there is no command");
+              return;
+            }
+            document.getElementById("output").innerHTML = cmd;
+            try {
+              const respons = await sendRequest("http://localhost:3000/askAi", {
+                questionToAi: cmd,
+              });
+              document.getElementById("AiResponsSection").innerHTML = respons;
+            } catch (err) {
+              console.log(err);
+            }
+          }
+        };
+        recognition.onend = () => {
+          if (isSystemActive) {
+            setTimeout(() => {
+              try {
+                recognition.start();
+              } catch (e) {
+                console.log(e);
+              }
+            }, 10);
+          }
+        };
+
+        recognition.onerror = (event) => {
+          if (event.error === "no-speech") return;
+          console.error("Speech Error: ", event.error);
+        };
+
+        // const utterance = new SpeechSynthesisUtterance(data);
+        // utterance.lang = "en-US";
+        // window.speechSynthesis.speak(utterance);
+
+        document
+          .getElementById("botNameForm")
+          .addEventListener("submit", async (e) => {
+            e.preventDefault();
+            const newBotName = document.getElementById("nameBot").value;
+            const res = await fetch("http://localhost:3000/ChangeBotName", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                newBotName: newBotName,
+                oldBotName: botName,
+              }),
+            });
+
+            const data = await res.json();
+            if (data.status === "success") {
+              alert(data.msg);
+              window.location.reload();
+            } else {
+              alert(data.msg);
+            }
+          });
+      })();
     </script>
   </body>
 </html>
