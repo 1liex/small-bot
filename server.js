@@ -61,4 +61,11 @@ app.post("/ChangeBotName", async (req, res) => {
   res.send(executeRespons);
 });
 
+// app.post("/changLang", async (req, res)=>{
+//   const oldLang = req.body.oldLang
+//   const newLang = req.body.newLang
+//   const executeRespons = await execute.ChangeLang(oldLang, newLang)
+
+//   res.send(executeRespons)
+// })
 app.listen("3000");

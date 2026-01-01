@@ -9,6 +9,7 @@ export class SystemExecutor {
 
     this.dataSchema = new mongoose.Schema({
       botName: String,
+      sysLang: String,
       runcommands: [
         {
           userCmd: {
@@ -72,15 +73,13 @@ export class SystemExecutor {
         { botName: oldName },
         { $set: { botName: newName } }
       );
-      console.log(result)
-      if (result.modifiedCount > 0){
-
-        return {msg:`Changed name to ${newName}`, status: "success"};
-      }else{
-        return {msg: "You have chooce new name"}
+      if (result.modifiedCount > 0) {
+        return { msg: `Changed name to ${newName}`, status: "success" };
+      } else {
+        return { msg: "You have chooce new name" };
       }
     } catch (err) {
-      console.error(err);
+      return err;
     }
   }
   async findCommandAndStartApps(command) {
@@ -144,10 +143,35 @@ export class SystemExecutor {
 
     const result = openrouter.callModel({
       model: "openai/gpt-5-nano",
-      input: `in very short ${ask}`,
+      input: `in very short answer only in en and dont say anythin in arabic and dot add any special character with your respons${ask}`,
     });
 
     const text = await result.getText();
     return text;
   }
+
+  // async ChangeLang(oldLang, newLang) {
+  //   try {
+  //     const result = await this.botModel.updateOne(
+  //       {sysLang: oldLang},
+  //       { $set: { sysLang: newLang } }
+  //     );
+  //     console.log(
+  //         result
+  //       )
+  //     if (result.modifiedCount > 0) {
+        
+  //       return {
+  //         msg:
+  //           newLang === "en-US"
+  //             ? "Language now is English"
+  //             : "اللغة الان هي العربية",
+  //         newLang: newLang,
+  //       };
+  //     }
+  //   } catch (err) {
+  //     console.log(err)
+  //     return err;
+  //   }
+  // }
 }
