@@ -37,8 +37,8 @@
           }
         );
 
-        let data = await res.json();
-        console.log(data);
+        const data = await res.json();
+
         showCommands(data.runcommands, "run");
         showCommands(data.killcommands, "kill");
         const botName = data.botName;
@@ -99,7 +99,6 @@
           // console.log("Command detected: ", transcript);
           const splitedCall = transcript.split(" ");
 
-          console.log(splitedCall);
           if (splitedCall[0] === botName && splitedCall[1] === "شغل") {
             splitedCall.shift(0);
             splitedCall.shift(1);
