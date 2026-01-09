@@ -26,7 +26,16 @@
         <button type="submit">Change</button>
       </form>
     </div>
-
+    <style>
+      body{
+        background-color: black;
+        color: white;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-direction: column;
+      }
+    </style>
     <script>
       (async () => {
         const res = await fetch(
@@ -95,11 +104,11 @@
 
         recognition.onresult = async (event) => {
           const transcript =
-            event.results[event.results.length - 1][0].transcript.trim();
+            event.results[event.results.length - 1][0].transcript.trim().toLowerCase();
           // console.log("Command detected: ", transcript);
           const splitedCall = transcript.split(" ");
 
-          if (splitedCall[0] === botName && splitedCall[1] === "شغل") {
+          if (splitedCall[0] === botName && splitedCall[1] === "run") {
             splitedCall.shift(0);
             splitedCall.shift(1);
             const cmd = splitedCall.join(" ");
@@ -122,7 +131,7 @@
             }
 
             document.getElementById("output").innerHTML = transcript;
-          } else if (splitedCall[0] === botName && splitedCall[1] === "طفي") {
+          } else if (splitedCall[0] === botName && splitedCall[1] === "kill") {
             splitedCall.shift(0);
             splitedCall.shift(1);
             const cmd = splitedCall.join(" ");
@@ -147,8 +156,8 @@
             document.getElementById("output").innerHTML = transcript;
           } else if (
             splitedCall[0] === botName &&
-            splitedCall[1] === "ابحث" &&
-            splitedCall[2] === "عن"
+            splitedCall[1] === "search" &&
+            splitedCall[2] === "for"
           ) {
             splitedCall.shift(0);
             splitedCall.shift(1);
@@ -172,7 +181,7 @@
             }
 
             document.getElementById("output").innerHTML = transcript;
-          } else if (splitedCall[0] === "اسمع") {
+          } else if (splitedCall[0] === "listen") {
             splitedCall.shift(0);
 
             const cmd = splitedCall.join(" ");
